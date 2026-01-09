@@ -58,12 +58,10 @@ app.get("/", (req, res) => {
 // POST new entry (auto-increment ID + timestamp)
 app.post("/add", (req, res) => {
   const data = readData();
-
-  // Determine next ID
   const nextId = data.length > 0 ? Math.max(...data.map(d => d.id || 0)) + 1 : 1;
 
   const newEntry = {
-    id: nextId, // auto-incrementing ID
+    id: nextId,
     ...req.body,
     timestamp: new Date().toISOString(),
   };
@@ -72,6 +70,42 @@ app.post("/add", (req, res) => {
   writeData(data);
 
   res.json({ status: "success", added: newEntry });
+});
+
+// DELETE entry by ID
+app.delete("/delete/:id", (req, res) => {
+  const data = readData();
+  const id = parseInt(req.params.id, 10);
+  const filteredData = data.filter(entry => entry.id !== id);
+
+  if (filteredData.length === data.length) {
+    return res.status(404).json({ status: "error", message: "ID not found" });
+  }
+
+  writeData(filteredData);
+  res.json({ status: "success", deletedId: id });
+});
+
+// UPDATE entry by ID
+app.put("/update/:id", (req, res) => {
+  const data = readData();
+  const id = parseInt(req.params.id, 10);
+  let found = false;
+
+  const updatedData = data.map(entry => {
+    if (entry.id === id) {
+      found = true;
+      return { ...entry, ...req.body, timestamp: new Date().toISOString() };
+    }
+    return entry;
+  });
+
+  if (!found) {
+    return res.status(404).json({ status: "error", message: "ID not found" });
+  }
+
+  writeData(updatedData);
+  res.json({ status: "success", updatedId: id });
 });
 
 app.listen(port, () => console.log(`CloudPad Notes running on port ${port}`));
