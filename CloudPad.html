@@ -1,24 +1,2 @@
-function generateSample() {
-    const notesList = [
-        "Morning check",
-        "Afternoon walk",
-        "Evening check",
-        "Felt dizzy",
-        "After breakfast",
-        "Before bed",
-        "Post-workout",
-        "Fasting check"
-    ];
-
-    const newEntry = {
-        timestamp: new Date().toLocaleString(),
-        bpSystolic: Math.floor(Math.random() * 40) + 100,
-        bpDiastolic: Math.floor(Math.random() * 30) + 60,
-        glucose: (Math.random() * 4 + 5).toFixed(1),
-        notes: notesList[Math.floor(Math.random() * notesList.length)]
-    };
-
-    cloudData.push(newEntry);
-    localStorage.setItem("cloudData", JSON.stringify(cloudData));
-    updateOutput(`Sample added: ${JSON.stringify(newEntry)}`);
-}
+<input type="number" id="deleteIndex" placeholder="Entry # to delete">
+<button onclick="deleteEntry()">Delete Entry</button>
