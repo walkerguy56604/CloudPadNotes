@@ -1,2 +1,107 @@
-<input type="number" id="deleteIndex" placeholder="Entry # to delete">
-<button onclick="deleteEntry()">Delete Entry</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CloudPad Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f2f2f2; }
+        h1 { text-align: center; }
+        button { margin: 5px; padding: 10px 15px; font-size: 14px; }
+        input { padding: 5px; margin: 5px; width: 150px; }
+        #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 250px; overflow-y: auto; background: #fff; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>CloudPad Dashboard</h1>
+
+    <button onclick="fetchData()">Fetch Data</button>
+    <button onclick="generateSample()">Generate Sample</button>
+    <button onclick="clearData()">Clear All Data</button>
+    <button onclick="startAutoRun()">Start Auto-Run</button>
+    <button onclick="stopAutoRun()">Stop Auto-Run</button>
+
+    <br>
+
+    <input type="number" id="deleteIndex" placeholder="Entry # to delete">
+    <button onclick="deleteEntry()">Delete Entry</button>
+
+    <div id="output">Dashboard output will appear here...</div>
+
+    <script>
+        // ===== Local Storage & Auto-Run =====
+        let cloudData = JSON.parse(localStorage.getItem("cloudData") || "[]");
+        let autoRunInterval;
+
+        // ===== Utility Function =====
+        function updateOutput(message) {
+            const outputDiv = document.getElementById("output");
+            outputDiv.innerHTML += message + "\n";
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+
+        // ===== CRUD Functions =====
+        function fetchData() {
+            updateOutput("Fetching data...");
+            if (cloudData.length === 0) {
+                updateOutput("No data available.");
+            } else {
+                cloudData.forEach((entry, idx) => {
+                    updateOutput(`${idx + 1}: ${JSON.stringify(entry)}`);
+                });
+            }
+        }
+
+        function generateSample() {
+            const noteOptions = ["Morning check", "Afternoon walk", "Evening check", "Workout", "Meal"];
+            const newEntry = {
+                timestamp: new Date().toLocaleString(),
+                bpSystolic: Math.floor(Math.random() * 40) + 100, // 100–140
+                bpDiastolic: Math.floor(Math.random() * 30) + 60, // 60–90
+                glucose: (Math.random() * 4 + 5).toFixed(1), // 5.0–9.0
+                note: noteOptions[Math.floor(Math.random() * noteOptions.length)]
+            };
+            cloudData.push(newEntry);
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            updateOutput(`Sample added: ${JSON.stringify(newEntry)}`);
+        }
+
+        function clearData() {
+            cloudData = [];
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            updateOutput("All data cleared.");
+        }
+
+        function deleteEntry() {
+            const index = parseInt(document.getElementById("deleteIndex").value) - 1;
+            if (isNaN(index) || index < 0 || index >= cloudData.length) {
+                updateOutput("⚠️ Invalid entry number.");
+                return;
+            }
+            const removed = cloudData.splice(index, 1)[0];
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            updateOutput(`Deleted entry: ${JSON.stringify(removed)}`);
+        }
+
+        // ===== Auto-Run =====
+        function startAutoRun() {
+            stopAutoRun(); // Clear any existing interval
+            let countdown = 10; // seconds
+            updateOutput(`Auto-Run started. Generating sample every ${countdown}s.`);
+            autoRunInterval = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    generateSample();
+                    countdown = 10;
+                }
+            }, 1000);
+        }
+
+        function stopAutoRun() {
+            if (autoRunInterval) {
+                clearInterval(autoRunInterval);
+                updateOutput("Auto-Run stopped.");
+            }
+        }
+    </script>
+</body>
+</html>
