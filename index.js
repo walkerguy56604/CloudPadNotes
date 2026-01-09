@@ -59,10 +59,13 @@ app.get("/", (req, res) => {
   res.json(data);
 });
 
-// POST new entry
+// POST new entry (automatically adds timestamp)
 app.post("/add", (req, res) => {
   const data = readData();
-  const newEntry = req.body;
+  const newEntry = {
+    ...req.body,
+    timestamp: new Date().toISOString(), // automatically add timestamp
+  };
   data.push(newEntry);
   writeData(data);
   res.json({ status: "success", added: newEntry });
