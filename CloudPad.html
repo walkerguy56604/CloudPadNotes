@@ -9,6 +9,7 @@
         button { margin: 5px; padding: 10px 15px; font-size: 14px; cursor: pointer; }
         #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 200px; overflow-y: auto; background: #fff; font-family: monospace; white-space: pre-line; }
         .btn-group { text-align: center; margin-bottom: 10px; }
+        input { padding: 5px; width: 60px; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -20,6 +21,7 @@
         <button onclick="clearData()">Clear Data</button>
         <button onclick="startAutoRun()">Start Auto-Run</button>
         <button onclick="stopAutoRun()">Stop Auto-Run</button>
+        <span>Delete Entry #: <input type="number" id="deleteIndex" min="1"> <button onclick="deleteEntry()">Delete</button></span>
     </div>
 
     <div id="output">Dashboard output will appear here...</div>
@@ -63,6 +65,17 @@
             cloudData = [];
             localStorage.setItem("cloudData", JSON.stringify(cloudData));
             updateOutput("All data cleared.");
+        }
+
+        function deleteEntry() {
+            const idx = parseInt(document.getElementById("deleteIndex").value, 10) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= cloudData.length) {
+                updateOutput("Invalid entry number.");
+                return;
+            }
+            const removed = cloudData.splice(idx, 1)[0];
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            updateOutput(`Deleted entry: ${JSON.stringify(removed)}`);
         }
 
         // ======== Auto-Run ========
