@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CloudPad Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    button { margin: 5px; padding: 10px 15px; }
+    #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 300px; overflow-y: auto; background: #f9f9f9; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>CloudPad Dashboard</h1>
+
+  <button onclick="fetchData()">View All Entries</button>
+  <button onclick="generateSample()">Generate Sample Entry</button>
+  <button onclick="startAutoRun()">Start Auto-Run</button>
+  <button onclick="stopAutoRun()">Stop Auto-Run</button>
+  <button onclick="clearData()">Clear All Data</button>
+
+  <div id="output">Output will appear here...</div>
+
+  <script>
+    const apiBase = "http://localhost:3000";
+
+    async function fetchData() {
+      const res = await fetch(`${apiBase}/`);
+      const data = await res.json();
+      document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+    }
+
+    async function generateSample() {
+      const res = await fetch(`${apiBase}/generate-sample/1`, { method: 'POST' });
+      const data = await res.json();
+      document.getElementById("output").innerText = "Generated entry:\n" + JSON.stringify(data, null, 2);
+    }
+
+    async function clearData() {
+      const res = await fetch(`${apiBase}/clear-data`, { method: 'POST' });
+      const data = await res.json();
+      document.getElementById("output").innerText = data.message;
+    }
+
+    async function startAutoRun() {
+      const res = await fetch(`${apiBase}/start-auto-run/30`, { method: 'POST' });
+      const data = await res.json();
+      document.getElementById("output").innerText = data.message;
+    }
+
+    async function stopAutoRun() {
+      const res = await fetch(`${apiBase}/stop-auto-run`, { method: 'POST' });
+      const data = await res.json();
+      document.getElementById("output").innerText = data.message;
+    }
+  </script>
+</body>
+</html>
