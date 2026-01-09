@@ -7,7 +7,6 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json()); // allow JSON in request body
 
-// Path to your data.json
 const dataFilePath = path.join(process.cwd(), "data.json");
 
 // Initialize data.json if missing or empty
@@ -24,16 +23,14 @@ function initializeData() {
       }
     } catch (err) {
       console.error("Error reading data.json:", err);
-      fs.writeFileSync(dataFilePath, "[]"); // reset if corrupted
+      fs.writeFileSync(dataFilePath, "[]");
       console.log("data.json reset due to read error.");
     }
   }
 }
 
-// Call initialization on startup
 initializeData();
 
-// Helper: safely read JSON file
 function readData() {
   try {
     const data = fs.readFileSync(dataFilePath, "utf-8");
@@ -44,7 +41,6 @@ function readData() {
   }
 }
 
-// Helper: safely write JSON file
 function writeData(data) {
   try {
     fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
@@ -59,15 +55,22 @@ app.get("/", (req, res) => {
   res.json(data);
 });
 
-// POST new entry (automatically adds timestamp)
+// POST new entry (auto-increment ID + timestamp)
 app.post("/add", (req, res) => {
   const data = readData();
+
+  // Determine next ID
+  const nextId = data.length > 0 ? Math.max(...data.map(d => d.id || 0)) + 1 : 1;
+
   const newEntry = {
+    id: nextId, // auto-incrementing ID
     ...req.body,
-    timestamp: new Date().toISOString(), // automatically add timestamp
+    timestamp: new Date().toISOString(),
   };
+
   data.push(newEntry);
   writeData(data);
+
   res.json({ status: "success", added: newEntry });
 });
 
