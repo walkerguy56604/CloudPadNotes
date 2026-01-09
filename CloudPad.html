@@ -10,6 +10,7 @@
         #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 200px; overflow-y: auto; background: #fff; font-family: monospace; white-space: pre-line; }
         .btn-group { text-align: center; margin-bottom: 10px; }
         input { padding: 5px; width: 60px; margin-left: 5px; }
+        .edit-input { width: 50px; }
     </style>
 </head>
 <body>
@@ -21,7 +22,15 @@
         <button onclick="clearData()">Clear Data</button>
         <button onclick="startAutoRun()">Start Auto-Run</button>
         <button onclick="stopAutoRun()">Stop Auto-Run</button>
+        <br>
         <span>Delete Entry #: <input type="number" id="deleteIndex" min="1"> <button onclick="deleteEntry()">Delete</button></span>
+        <br>
+        <span>Edit Entry #: <input type="number" id="editIndex" min="1">
+            Systolic: <input type="number" id="editSystolic" class="edit-input">
+            Diastolic: <input type="number" id="editDiastolic" class="edit-input">
+            Glucose: <input type="number" step="0.1" id="editGlucose" class="edit-input">
+            <button onclick="editEntry()">Edit</button>
+        </span>
     </div>
 
     <div id="output">Dashboard output will appear here...</div>
@@ -78,10 +87,28 @@
             updateOutput(`Deleted entry: ${JSON.stringify(removed)}`);
         }
 
+        function editEntry() {
+            const idx = parseInt(document.getElementById("editIndex").value, 10) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= cloudData.length) {
+                updateOutput("Invalid entry number.");
+                return;
+            }
+            const systolic = parseInt(document.getElementById("editSystolic").value, 10);
+            const diastolic = parseInt(document.getElementById("editDiastolic").value, 10);
+            const glucose = parseFloat(document.getElementById("editGlucose").value);
+
+            if (!isNaN(systolic)) cloudData[idx].bpSystolic = systolic;
+            if (!isNaN(diastolic)) cloudData[idx].bpDiastolic = diastolic;
+            if (!isNaN(glucose)) cloudData[idx].glucose = glucose.toFixed(1);
+
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            updateOutput(`Edited entry #${idx+1}: ${JSON.stringify(cloudData[idx])}`);
+        }
+
         // ======== Auto-Run ========
         function startAutoRun() {
-            stopAutoRun(); // clear previous if any
-            let countdown = 10; // seconds
+            stopAutoRun();
+            let countdown = 10;
             updateOutput(`Auto-Run started. Next sample in ${countdown}s`);
             autoRunInterval = setInterval(() => {
                 countdown--;
