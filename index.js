@@ -8,16 +8,39 @@ const port = process.env.PORT || 3000;
 app.use(express.json()); // allow JSON in request body
 
 // Path to your data.json
-const dataFilePath = path.join(Deno.cwd(), "data.json");
+const dataFilePath = path.join(process.cwd(), "data.json");
+
+// Initialize data.json if missing or empty
+function initializeData() {
+  if (!fs.existsSync(dataFilePath)) {
+    fs.writeFileSync(dataFilePath, "[]");
+    console.log("data.json created and initialized.");
+  } else {
+    try {
+      const content = fs.readFileSync(dataFilePath, "utf-8");
+      if (!content.trim()) {
+        fs.writeFileSync(dataFilePath, "[]");
+        console.log("data.json was empty and has been initialized.");
+      }
+    } catch (err) {
+      console.error("Error reading data.json:", err);
+      fs.writeFileSync(dataFilePath, "[]"); // reset if corrupted
+      console.log("data.json reset due to read error.");
+    }
+  }
+}
+
+// Call initialization on startup
+initializeData();
 
 // Helper: safely read JSON file
 function readData() {
   try {
     const data = fs.readFileSync(dataFilePath, "utf-8");
-    return JSON.parse(data || "[]"); // fallback to empty array if file empty
+    return JSON.parse(data || "[]");
   } catch (err) {
     console.error("Error reading data.json:", err);
-    return []; // fallback to empty array if error
+    return [];
   }
 }
 
