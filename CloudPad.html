@@ -7,10 +7,11 @@
         body { font-family: sans-serif; padding: 20px; background: #f2f2f2; }
         h1 { text-align: center; }
         button { margin: 5px; padding: 10px 15px; font-size: 14px; cursor: pointer; }
-        #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 200px; overflow-y: auto; background: #fff; font-family: monospace; white-space: pre-line; }
+        #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 250px; overflow-y: auto; background: #fff; font-family: monospace; white-space: pre-line; }
         .btn-group { text-align: center; margin-bottom: 10px; }
-        input { padding: 5px; width: 60px; margin-left: 5px; }
+        input, textarea { padding: 5px; margin-left: 5px; }
         .edit-input { width: 50px; }
+        .edit-text { width: 150px; }
     </style>
 </head>
 <body>
@@ -22,31 +23,36 @@
         <button onclick="clearData()">Clear Data</button>
         <button onclick="startAutoRun()">Start Auto-Run</button>
         <button onclick="stopAutoRun()">Stop Auto-Run</button>
-        <br>
+        <br><br>
         <span>Delete Entry #: <input type="number" id="deleteIndex" min="1"> <button onclick="deleteEntry()">Delete</button></span>
-        <br>
+        <br><br>
         <span>Edit Entry #: <input type="number" id="editIndex" min="1">
             Systolic: <input type="number" id="editSystolic" class="edit-input">
             Diastolic: <input type="number" id="editDiastolic" class="edit-input">
             Glucose: <input type="number" step="0.1" id="editGlucose" class="edit-input">
+            Notes: <input type="text" id="editNotes" class="edit-text">
             <button onclick="editEntry()">Edit</button>
+        </span>
+        <br><br>
+        <span>Add Entry: Systolic: <input type="number" id="newSystolic" class="edit-input">
+            Diastolic: <input type="number" id="newDiastolic" class="edit-input">
+            Glucose: <input type="number" step="0.1" id="newGlucose" class="edit-input">
+            Notes: <input type="text" id="newNotes" class="edit-text">
+            <button onclick="addEntry()">Add</button>
         </span>
     </div>
 
     <div id="output">Dashboard output will appear here...</div>
 
     <script>
-        // ======== Local Storage ========
         let cloudData = JSON.parse(localStorage.getItem("cloudData") || "[]");
         let autoRunInterval;
 
-        // ======== Utility ========
         function updateOutput(message) {
             const outputDiv = document.getElementById("output");
             outputDiv.innerHTML = message + "\n" + outputDiv.innerHTML; // newest on top
         }
 
-        // ======== CRUD Functions ========
         function fetchData() {
             if (cloudData.length === 0) {
                 updateOutput("No data available.");
@@ -58,12 +64,42 @@
             });
         }
 
+        function addEntry() {
+            const systolic = parseInt(document.getElementById("newSystolic").value, 10);
+            const diastolic = parseInt(document.getElementById("newDiastolic").value, 10);
+            const glucose = parseFloat(document.getElementById("newGlucose").value);
+            const notes = document.getElementById("newNotes").value || "";
+
+            if (isNaN(systolic) || isNaN(diastolic) || isNaN(glucose)) {
+                updateOutput("Invalid input. Please fill all fields.");
+                return;
+            }
+
+            const newEntry = {
+                timestamp: new Date().toLocaleString(),
+                bpSystolic: systolic,
+                bpDiastolic: diastolic,
+                glucose: glucose.toFixed(1),
+                notes: notes
+            };
+
+            cloudData.push(newEntry);
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            updateOutput(`Entry added: ${JSON.stringify(newEntry)}`);
+
+            document.getElementById("newSystolic").value = "";
+            document.getElementById("newDiastolic").value = "";
+            document.getElementById("newGlucose").value = "";
+            document.getElementById("newNotes").value = "";
+        }
+
         function generateSample() {
             const newEntry = {
                 timestamp: new Date().toLocaleString(),
                 bpSystolic: Math.floor(Math.random() * 40) + 100,
                 bpDiastolic: Math.floor(Math.random() * 30) + 60,
-                glucose: (Math.random() * 4 + 5).toFixed(1)
+                glucose: (Math.random() * 4 + 5).toFixed(1),
+                notes: "Auto-generated"
             };
             cloudData.push(newEntry);
             localStorage.setItem("cloudData", JSON.stringify(cloudData));
@@ -93,19 +129,22 @@
                 updateOutput("Invalid entry number.");
                 return;
             }
+
             const systolic = parseInt(document.getElementById("editSystolic").value, 10);
             const diastolic = parseInt(document.getElementById("editDiastolic").value, 10);
             const glucose = parseFloat(document.getElementById("editGlucose").value);
+            const notes = document.getElementById("editNotes").value;
 
             if (!isNaN(systolic)) cloudData[idx].bpSystolic = systolic;
             if (!isNaN(diastolic)) cloudData[idx].bpDiastolic = diastolic;
             if (!isNaN(glucose)) cloudData[idx].glucose = glucose.toFixed(1);
+            if (notes !== "") cloudData[idx].notes = notes;
 
+            cloudData[idx].timestamp = new Date().toLocaleString(); // update timestamp
             localStorage.setItem("cloudData", JSON.stringify(cloudData));
             updateOutput(`Edited entry #${idx+1}: ${JSON.stringify(cloudData[idx])}`);
         }
 
-        // ======== Auto-Run ========
         function startAutoRun() {
             stopAutoRun();
             let countdown = 10;
