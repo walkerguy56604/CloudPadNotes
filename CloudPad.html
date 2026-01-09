@@ -1,90 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>CloudPad iPad Dashboard</title>
-<style>
-  body { font-family: sans-serif; padding: 20px; background: #f2f2f2; }
-  h1 { text-align: center; }
-  button { margin: 5px; padding: 10px 15px; font-size: 14px; }
-  #output { border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 200px; overflow-y: auto; background: #fff; font-family: monospace; }
-</style>
+    <meta charset="UTF-8">
+    <title>CloudPad iPad Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f2f2f2; }
+        h1 { text-align: center; }
+        button { margin: 5px; padding: 10px 15px; font-size: 14px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-family: monospace; }
+        th { background: #e0e0e0; }
+        .low { background-color: #d4edda; }       /* green */
+        .borderline { background-color: #fff3cd; }/* yellow */
+        .high { background-color: #f8d7da; }      /* red */
+        #output { margin-top: 10px; font-family: monospace; }
+    </style>
 </head>
 <body>
+    <h1>CloudPad Dashboard</h1>
 
-<h1>CloudPad Dashboard</h1>
+    <button onclick="fetchData()">Fetch Data</button>
+    <button onclick="generateSample()">Generate Sample</button>
+    <button onclick="clearData()">Clear Data</button>
+    <button onclick="startAutoRun()">Start Auto-Run</button>
+    <button onclick="stopAutoRun()">Stop Auto-Run</button>
 
-<button onclick="fetchData()">Fetch Data</button>
-<button onclick="generateSample()">Generate Sample</button>
-<button onclick="clearData()">Clear Data</button>
-<button onclick="startAutoRun()">Start Auto-Run</button>
-<button onclick="stopAutoRun()">Stop Auto-Run</button>
+    <div id="output">Dashboard output will appear here...</div>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Timestamp</th>
+                <th>BP Systolic</th>
+                <th>BP Diastolic</th>
+                <th>Glucose</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-<div id="output">Dashboard output will appear here...</div>
+    <script>
+        let cloudData = JSON.parse(localStorage.getItem("cloudData") || "[]");
+        let autoRunInterval;
 
-<script>
-// ======== Local Data Storage ========
-let cloudData = JSON.parse(localStorage.getItem("cloudData") || "[]");
-let autoRunInterval;
+        function updateTable() {
+            const tbody = document.getElementById("dataTable").querySelector("tbody");
+            tbody.innerHTML = "";
+            cloudData.forEach((entry, idx) => {
+                const tr = document.createElement("tr");
 
-// ======== Utility Functions ========
-function updateOutput(message) {
-  const outputDiv = document.getElementById("output");
-  outputDiv.innerHTML += message + "\n";
-  outputDiv.scrollTop = outputDiv.scrollHeight;
-}
+                // Color coding for BP Systolic
+                let sysClass = entry.bpSystolic < 120 ? "low" : entry.bpSystolic <= 139 ? "borderline" : "high";
+                let diaClass = entry.bpDiastolic < 80 ? "low" : entry.bpDiastolic <= 89 ? "borderline" : "high";
+                let gluClass = entry.glucose < 5.5 ? "low" : entry.glucose <= 7.0 ? "borderline" : "high";
 
-// ======== CRUD Operations ========
-function fetchData() {
-  updateOutput("Fetching data...");
-  if (cloudData.length === 0) {
-    updateOutput("No data available.");
-  } else {
-    cloudData.forEach((entry, idx) => {
-      updateOutput(`${idx+1}: ${JSON.stringify(entry)}`);
-    });
-  }
-}
+                tr.innerHTML = `
+                    <td>${idx+1}</td>
+                    <td>${entry.timestamp}</td>
+                    <td class="${sysClass}">${entry.bpSystolic}</td>
+                    <td class="${diaClass}">${entry.bpDiastolic}</td>
+                    <td class="${gluClass}">${entry.glucose}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
-function generateSample() {
-  const newEntry = {
-    timestamp: new Date().toLocaleString(),
-    bpSystolic: Math.floor(Math.random() * 40) + 100, // 100–140
-    bpDiastolic: Math.floor(Math.random() * 30) + 60,  // 60–90
-    glucose: (Math.random() * 4 + 5).toFixed(1)        // 5.0–9.0
-  };
-  cloudData.push(newEntry);
-  localStorage.setItem("cloudData", JSON.stringify(cloudData));
-  updateOutput(`Sample added: ${JSON.stringify(newEntry)}`);
-}
+        function fetchData() {
+            const outputDiv = document.getElementById("output");
+            outputDiv.innerHTML = "Fetching data...";
+            if (cloudData.length === 0) {
+                outputDiv.innerHTML += "\nNo data available.";
+            } else {
+                outputDiv.innerHTML += `\n${cloudData.length} entries loaded.`;
+            }
+            updateTable();
+        }
 
-function clearData() {
-  cloudData = [];
-  localStorage.setItem("cloudData", JSON.stringify(cloudData));
-  updateOutput("All data cleared.");
-}
+        function generateSample() {
+            const newEntry = {
+                timestamp: new Date().toLocaleString(),
+                bpSystolic: Math.floor(Math.random() * 40) + 100,
+                bpDiastolic: Math.floor(Math.random() * 30) + 60,
+                glucose: (Math.random() * 4 + 5).toFixed(1)
+            };
+            cloudData.push(newEntry);
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            fetchData();
+        }
 
-// ======== Auto-Run Functions ========
-function startAutoRun() {
-  stopAutoRun();
-  let countdown = 10; // seconds until next auto-run
-  updateOutput(`Auto-Run starting. Interval: ${countdown}s`);
-  autoRunInterval = setInterval(() => {
-    countdown--;
-    if (countdown <= 0) {
-      generateSample();
-      countdown = 10;
-    }
-  }, 1000);
-}
+        function clearData() {
+            cloudData = [];
+            localStorage.setItem("cloudData", JSON.stringify(cloudData));
+            fetchData();
+        }
 
-function stopAutoRun() {
-  if (autoRunInterval) {
-    clearInterval(autoRunInterval);
-    updateOutput("Auto-Run stopped.");
-  }
-}
-</script>
+        function startAutoRun() {
+            stopAutoRun();
+            let countdown = 10;
+            const outputDiv = document.getElementById("output");
+            outputDiv.innerHTML += `\nAuto-Run starting: every ${countdown}s`;
+            autoRunInterval = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    generateSample();
+                    countdown = 10;
+                }
+            }, 1000);
+        }
 
+        function stopAutoRun() {
+            if (autoRunInterval) {
+                clearInterval(autoRunInterval);
+                document.getElementById("output").innerHTML += "\nAuto-Run stopped.";
+            }
+        }
+
+        // Initial table render
+        updateTable();
+    </script>
 </body>
 </html>
